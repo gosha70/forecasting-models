@@ -1,0 +1,16 @@
+{
+   "prep_config": {
+        "drop_colum_names": [],
+        "drop_colum_patterns": []
+   },
+   "model_config": {
+        "model_type": "LSTM",
+        "model_params": {
+            "epochs": 5
+        },
+        "forecasting_config": {
+            "forecasting_type": "next_event",
+            "event_columns": []
+        }
+   }
+}
