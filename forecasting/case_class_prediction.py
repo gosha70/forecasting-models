@@ -1,5 +1,7 @@
 # Copyright (c) EGOGE - All Rights Reserved.
 # This software may be used and distributed according to the terms of the Apache-2.0 license.
+import pandas as pd
+
 from forecasting.base_forecasting import BaseForecasting
 from models.base_model_factory import BaseModelFactory
 from forecasting.config.forecasting_config import ForecastingConfig
@@ -8,7 +10,11 @@ from prep.config.prep_config import PrepConfig
 class CaseClassForecasting(BaseForecasting):
     """Class for predicting the class of a case"""
 
-    def __init__(self, forecasting_config: ForecastingConfig, prep_config: PrepConfig, dataset):
+    def __init__(
+            self, 
+            forecasting_config: ForecastingConfig, 
+            prep_config: PrepConfig, 
+            dataset: pd.DataFrame):
         super().__init__(forecasting_config, prep_config)
         self.dataset = dataset
 

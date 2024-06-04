@@ -1,0 +1,49 @@
+{
+    "prep_config": {
+         "drop_colum_names": [
+             "number",
+             "active",
+             "sys_created_at",
+             "sys_updated_at",
+             "resolved_at",
+             "closed_at",
+             "closed_code",
+             "assigned_to"
+         ],
+         "drop_colum_patterns": ["__DURATION_EVENT_*"],
+         "include_all_data": false
+    },
+    "model_config": {
+         "model_type": "MC",
+         "model_params": {
+             "epochs": 1
+         },
+         "forecasting_config": {
+             "forecasting_type": "next_event",
+             "event_column_pattern": "__EVENT_*",
+             "random_sequence": true
+         }
+    },
+    "test_data": [
+         {
+             "X": ["New", "Active", "Active", "Active"],
+             "y": "Resolved"
+         },        
+         {
+             "X": ["New", "Active", "Active", "Active", "Active", "Active"],
+             "y": "Active"
+         },        
+         {
+             "X": ["Active", "Active", "Active", "Awaiting User Info", "Awaiting User Info", "Resolved"],
+             "y": "Closed"
+         },        
+         {
+             "X": ["New", "New", "Awaiting User Info", "Awaiting User Info", "Resolved"],
+             "y": "Active"
+         },        
+         {
+             "X": ["Active", "Active", "Awaiting User Info", "Awaiting User Info"],
+             "y": "Resolved"
+         }       
+    ]
+ }

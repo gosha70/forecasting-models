@@ -1,0 +1,14 @@
+{
+    "transformation_type": 1,
+    "case_id_column": "number",
+    "event_column": "incident_state",   
+    "min_event_sequence": 3,
+    "max_event_sequence": 30,
+    "duration_strategy": {
+       "type": 2,
+       "time_column": "sys_updated_at"
+    },
+    "merge_strategy": 3,
+    "event_prexix": "__EVENT_",
+    "event_duration_prexix": "__DURATION_EVENT_"
+ }

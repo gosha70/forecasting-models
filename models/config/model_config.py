@@ -4,6 +4,7 @@ from typing import Dict, Any
 
 from models.base_model_factory import BaseModelFactory
 from models.lstm_model_factory import LSTM_ModelFactory
+from models.markov_chain_factory import MarkivChainModelFactory
 from models.model_type import ModelType
 from forecasting.config.forecasting_config import ForecastingConfig
 
@@ -23,8 +24,8 @@ class ModelConfig:
                  
     @property
     def drop_colum_patterns(self)-> ModelType:
-        return self._model_type         
-                 
+        return self._model_type
+    
     @property
     def model_params(self)-> Dict[str, Any]:
         return self._model_params    
@@ -36,6 +37,8 @@ class ModelConfig:
     def create_model(self)-> BaseModelFactory:
         if  self._model_type == ModelType.LSTM:
             return LSTM_ModelFactory()
+        elif self._model_type == ModelType.MC:
+            return MarkivChainModelFactory()
         return None   
         
     def to_dict(self) -> Dict[str, Any]:

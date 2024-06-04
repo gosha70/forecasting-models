@@ -10,7 +10,10 @@ from .forecasting_type import ForecastingType
 class BaseForecasting(ABC):
     """The abstract class for predictive analytics cases"""
   
-    def __init__(self, forecasting_config: ForecastingConfig, prep_config: PrepConfig):
+    def __init__(
+            self, 
+            forecasting_config: ForecastingConfig, 
+            prep_config: PrepConfig):
         """Initializes BaseFileConverter with optional Language and Logging."""
         self._forecasting_config = forecasting_config
         self._prep_config = prep_config
@@ -28,11 +31,11 @@ class BaseForecasting(ABC):
         return []
 
     @abstractmethod
-    def train(self, model: BaseModelFactory):
+    def train(self, model_factory: BaseModelFactory):
         raise ValueError('BaseForecasting', 'train()')
     
     @abstractmethod
-    def predict(self, ml_model, X):
+    def predict(self, model_factory: BaseModelFactory, X):
         raise ValueError('BaseForecasting', 'predict()')
       
     @staticmethod
