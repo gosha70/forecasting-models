@@ -107,6 +107,18 @@ class BaseModelFactory(ABC):
         """
         raise NotImplementedError(f'{type(self).__name__} does not support train_remaining_duration')
 
+    def predict_remaining_duration(self, X):
+        """
+        Predicts remaining case duration for a dual-input (event+duration) model.
+
+        Parameters:
+        - X: event index sequence (durations padded with zeros if unavailable)
+
+        Returns:
+        - Predicted remaining duration (float)
+        """
+        raise NotImplementedError(f'{type(self).__name__} does not support predict_remaining_duration')
+
     @abstractmethod
     def predict(self, X):
         """

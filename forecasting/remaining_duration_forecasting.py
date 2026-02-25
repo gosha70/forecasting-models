@@ -121,7 +121,7 @@ class RemainingDurationForecasting(BaseForecasting):
 
     def predict(self, model_factory: BaseModelFactory, X):
         in_progress_sequence = [self.event_to_idx.get(event, len(self.unique_events)) for event in X]
-        return model_factory.predict_duration(in_progress_sequence)
+        return model_factory.predict_remaining_duration(in_progress_sequence)
 
     @staticmethod
     def compute_metrics(y_true, y_pred):

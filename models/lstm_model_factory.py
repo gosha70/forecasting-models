@@ -181,6 +181,12 @@ class LSTM_ModelFactory(BaseModelFactory):
         proba = self._ml_model.predict(in_progress_sequence)[0]
         return {i: float(p) for i, p in enumerate(proba)}
 
+    def predict_remaining_duration(self, X):
+        X_events = pad_sequences([X], maxlen=self._sequence_length, dtype='float32')
+        X_durations = np.zeros_like(X_events)
+        X_input = np.stack([X_events, X_durations], axis=-1)
+        return self._ml_model.predict(X_input)[0][0]
+
     def predict_duration(self, X):
         in_progress_sequence = pad_sequences([X], maxlen=self._sequence_length, dtype='float32')
         return self._ml_model.predict(in_progress_sequence)[0][0]      

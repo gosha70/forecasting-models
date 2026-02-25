@@ -1,0 +1,29 @@
+{
+   "prep_config": {
+        "drop_colum_names": [],
+        "drop_colum_patterns": [],
+        "include_all_data": false
+   },
+   "model_config": {
+        "model_type": "LSTM",
+        "model_params": {
+            "epochs": 5
+        },
+        "forecasting_config": {
+            "forecasting_type": "event_duration",
+            "event_column_pattern": "__EVENT_*",
+            "duration_column_pattern": "__DURATION_EVENT_*",
+            "random_sequence": false
+        }
+   },
+   "test_data": [
+        {
+            "X": ["New", "Accepted", "Billing"],
+            "y": "10.5"
+        },
+        {
+            "X": ["New", "Accepted"],
+            "y": "6.0"
+        }
+   ]
+}
