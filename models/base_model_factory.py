@@ -87,8 +87,28 @@ class BaseModelFactory(ABC):
         - Model, loss and accuracy for that trained module
         """    
 
-    @abstractmethod 
-    def predict(self, X): 
+    def train_remaining_duration(
+            self,
+            event_sequences,
+            duration_sequences,
+            unique_events_count,
+            y):
+        """
+        Creates and trains a model to predict remaining case duration from event prefixes.
+
+        Parameters:
+        - event_sequences: list of event index sequences (variable length prefixes)
+        - duration_sequences: list of cumulative duration sequences matching event prefixes
+        - unique_events_count: number of unique events
+        - y: target remaining durations (float array)
+
+        Returns:
+        - Loss and evaluation metric for the trained model
+        """
+        raise NotImplementedError(f'{type(self).__name__} does not support train_remaining_duration')
+
+    @abstractmethod
+    def predict(self, X):
         """
         Predicts the specified X.
 
@@ -96,11 +116,23 @@ class BaseModelFactory(ABC):
         - X: the dataset of independent variables which will be used to predict
 
         Returns:
-        - The prediction results   
+        - The prediction results
         """
 
-    @abstractmethod 
-    def predict_duration(self, X):   
+    @abstractmethod
+    def predict_proba(self, X):
+        """
+        Predicts probability distribution over all possible next events.
+
+        Parameters:
+        - X: the sequence of events observed so far
+
+        Returns:
+        - dict mapping event index (int) to probability (float), summing to 1.0
+        """
+
+    @abstractmethod
+    def predict_duration(self, X):
         """
         Predicts the duration for the specified X.
 
@@ -108,5 +140,5 @@ class BaseModelFactory(ABC):
         - X: the dataset of independent variables which will be used to predict
 
         Returns:
-        - The duration prediction  
+        - The duration prediction
         """ 

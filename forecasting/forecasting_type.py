@@ -7,3 +7,4 @@ class ForecastingType(Enum):
     EVENT_DURATION = "event_duration"
     CASE_DURATION = "case_duration"
     CASE_CLASS = "case_class"
+    REMAINING_DURATION = "remaining_duration"

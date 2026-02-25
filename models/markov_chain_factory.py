@@ -110,4 +110,11 @@ class MarkivChainModelFactory(BaseModelFactory):
             return len(self.transition_matrix)  # End event sequence
         next_event = max(next_events, key=next_events.get)
         return next_event
+
+    def predict_proba(self, X):
+        current_event = X[-1]
+        next_events = self.transition_matrix.get(current_event, {})
+        if not next_events:
+            return {self.unique_events_count: 1.0}
+        return {event: float(prob) for event, prob in next_events.items()}
     

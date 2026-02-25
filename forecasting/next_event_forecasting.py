@@ -83,4 +83,23 @@ class NextEventForecasting(BaseForecasting):
         in_progress_sequence = [self.event_to_idx.get(event, len(self.unique_events)) for event in X]
         predicted_event_idx = model_factory.predict(in_progress_sequence)
         return self.idx_to_event.get(predicted_event_idx, END_EVENT_SEQUENCE)
+
+    def predict_proba(self, model_factory: BaseModelFactory, X, top_k=None, threshold=None):
+        in_progress_sequence = [self.event_to_idx.get(event, len(self.unique_events)) for event in X]
+        raw_proba = model_factory.predict_proba(in_progress_sequence)
+
+        proba = {}
+        for idx, prob in raw_proba.items():
+            event_name = self.idx_to_event.get(idx, END_EVENT_SEQUENCE)
+            proba[event_name] = prob
+
+        if threshold is not None:
+            proba = {e: p for e, p in proba.items() if p >= threshold}
+
+        sorted_proba = dict(sorted(proba.items(), key=lambda x: x[1], reverse=True))
+
+        if top_k is not None:
+            sorted_proba = dict(list(sorted_proba.items())[:top_k])
+
+        return sorted_proba
         

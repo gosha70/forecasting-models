@@ -54,3 +54,10 @@ class TrainManager:
         for in_progress_events, expected_result in test_data:
             predicted_event = prediction_task.predict(model_factory=model_factory, X=in_progress_events)
             print(f'The predicted next event is: {predicted_event}; expected result: {expected_result}')
+
+            if hasattr(prediction_task, 'predict_proba'):
+                try:
+                    proba = prediction_task.predict_proba(model_factory=model_factory, X=in_progress_events, top_k=5)
+                    print(f'  Probability distribution (top 5): {proba}')
+                except NotImplementedError:
+                    pass

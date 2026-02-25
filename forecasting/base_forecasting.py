@@ -37,6 +37,9 @@ class BaseForecasting(ABC):
     @abstractmethod
     def predict(self, model_factory: BaseModelFactory, X):
         raise ValueError('BaseForecasting', 'predict()')
+
+    def predict_proba(self, model_factory: BaseModelFactory, X):
+        raise NotImplementedError(f'{type(self).__name__} does not support predict_proba')
       
     @staticmethod
     def create_prediction_training(forecasting_config: ForecastingConfig, prep_config: PrepConfig, dataset):
@@ -53,6 +56,9 @@ class BaseForecasting(ABC):
         elif tp == ForecastingType.CASE_CLASS:
             from .case_class_prediction import CaseClassForecasting
             return CaseClassForecasting(forecasting_config, prep_config, dataset)
+        elif tp == ForecastingType.REMAINING_DURATION:
+            from .remaining_duration_forecasting import RemainingDurationForecasting
+            return RemainingDurationForecasting(forecasting_config, prep_config, dataset)
         else:
             raise ValueError(f"Unknown PredictionType: {tp}")
         

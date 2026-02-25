@@ -174,9 +174,13 @@ class LSTM_ModelFactory(BaseModelFactory):
     
     def predict(self, X):
         in_progress_sequence = pad_sequences([X], maxlen=self._sequence_length, dtype='float32')
-        return np.argmax(self._ml_model.predict(in_progress_sequence), axis=-1)[0]   
+        return np.argmax(self._ml_model.predict(in_progress_sequence), axis=-1)[0]
 
-    
+    def predict_proba(self, X):
+        in_progress_sequence = pad_sequences([X], maxlen=self._sequence_length, dtype='float32')
+        proba = self._ml_model.predict(in_progress_sequence)[0]
+        return {i: float(p) for i, p in enumerate(proba)}
+
     def predict_duration(self, X):
         in_progress_sequence = pad_sequences([X], maxlen=self._sequence_length, dtype='float32')
         return self._ml_model.predict(in_progress_sequence)[0][0]      
@@ -279,6 +283,37 @@ class LSTM_ModelFactory(BaseModelFactory):
         loss, mse = self.train_prediction(X, y)
 
         return loss, mse
+
+    def train_remaining_duration(
+            self,
+            event_sequences,
+            duration_sequences,
+            unique_events_count,
+            y):
+        self.unique_events_count = unique_events_count
+
+        self._sequence_length = max(len(seq) for seq in event_sequences)
+
+        X_events = pad_sequences(event_sequences, maxlen=self._sequence_length, dtype='float32')
+        X_durations = pad_sequences(duration_sequences, maxlen=self._sequence_length, dtype='float32')
+
+        # Stack events and durations as 2-feature input: shape (samples, seq_len, 2)
+        X = np.stack([X_events, X_durations], axis=-1)
+
+        # Normalize targets
+        y_mean = np.mean(y)
+        y_std = np.std(y)
+        if y_std > 0:
+            y_norm = (y - y_mean) / y_std
+        else:
+            y_norm = y - y_mean
+
+        self._ml_model = self.create_regression_model(
+            input_shape=(self._sequence_length, 2)
+        )
+
+        loss, val_loss = self.train_prediction(X, y_norm)
+        return loss, val_loss
 
     def train_prediction(self, X, y):
         history = self._ml_model.fit(
