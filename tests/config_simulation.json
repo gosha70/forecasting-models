@@ -1,0 +1,30 @@
+{
+    "train_config": {
+        "prep_config": {
+            "drop_colum_names": [],
+            "drop_colum_patterns": [],
+            "include_all_data": false
+        },
+        "model_config": {
+            "model_type": "MC",
+            "model_params": {},
+            "forecasting_config": {
+                "forecasting_type": "next_event",
+                "event_column_pattern": "__EVENT_*",
+                "random_sequence": false
+            }
+        },
+        "test_data": []
+    },
+    "simulation": {
+        "n_simulations": 1000,
+        "max_steps": 50,
+        "seed": 42,
+        "prefixes": [
+            ["New"],
+            ["New", "Accepted"],
+            ["New", "Accepted", "Billing"]
+        ],
+        "n_prefix_simulations": 500
+    }
+}
