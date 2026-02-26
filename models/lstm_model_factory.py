@@ -139,10 +139,10 @@ class LSTM_ModelFactory(BaseModelFactory):
         # Not implented yet
         return self.train_simple_event_sequence(event_sequences, is_random_seq)
         
-    def train_simple_event_sequence( 
-            self, 
+    def train_simple_event_sequence(
+            self,
             event_sequences,
-            is_random_seq: bool): 
+            is_random_seq: bool):
         # Prepare X and y datasets
         X = []
         y = []
@@ -151,21 +151,21 @@ class LSTM_ModelFactory(BaseModelFactory):
             len_seq = len(seq)
             if len_seq < 2:
                 continue
-                
-            # Generate a random length for the subsequence
+
             if is_random_seq:
+                # Single random prefix per case
                 random_length = random.randint(1, len_seq - 1)
+                combined_seq = seq[:random_length]
+                x_y = seq[random_length] if random_length < len_seq - 1 else self.unique_events_count
+                X.append(combined_seq)
+                y.append(x_y)
             else:
-                random_length = len_seq - 1  
-
-            combined_seq = seq[:random_length]
-
-            # Define the target value
-            x_y = seq[random_length] if random_length < len(seq) - 1 else self.unique_events_count
-
-            X.append(combined_seq)
-            y.append(x_y)
-            #print(f"seq: {seq} X: {combined_seq} -> y: {x_y}")
+                # All prefixes per case: prefix of length k -> target is seq[k]
+                for k in range(1, len_seq):
+                    combined_seq = seq[:k]
+                    x_y = seq[k] if k < len_seq - 1 else self.unique_events_count
+                    X.append(combined_seq)
+                    y.append(x_y)
         
         # Pad sequences
         self._sequence_length = max(len(seq) for seq in X)
