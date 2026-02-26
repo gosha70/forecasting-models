@@ -55,6 +55,8 @@ class LSTM_ModelFactory(BaseModelFactory):
         super().__init__()
         self._ml_model = None
         self.unique_events_count = 0
+        self._y_mean = 0.0
+        self._y_std = 1.0
 
     def create_classification_model(self, **kwargs):
         params = {**CLASSIFICATION_DEFAULT_PARAMS, **kwargs}
@@ -185,11 +187,13 @@ class LSTM_ModelFactory(BaseModelFactory):
         X_events = pad_sequences([X], maxlen=self._sequence_length, dtype='float32')
         X_durations = np.zeros_like(X_events)
         X_input = np.stack([X_events, X_durations], axis=-1)
-        return self._ml_model.predict(X_input)[0][0]
+        raw = float(self._ml_model.predict(X_input)[0][0])
+        return raw * self._y_std + self._y_mean
 
     def predict_duration(self, X):
         in_progress_sequence = pad_sequences([X], maxlen=self._sequence_length, dtype='float32')
-        return self._ml_model.predict(in_progress_sequence)[0][0]      
+        raw = float(self._ml_model.predict(in_progress_sequence)[0][0])
+        return raw * self._y_std + self._y_mean      
     
     def train_duration_sequencOLD(
         self, 
@@ -270,9 +274,12 @@ class LSTM_ModelFactory(BaseModelFactory):
         
         # Normalize the target durations
         y = np.array(y, dtype='float32')
-        y_mean = np.mean(y)
-        y_std = np.std(y)
-        y = (y - y_mean) / y_std
+        self._y_mean = float(np.mean(y))
+        self._y_std = float(np.std(y))
+        if self._y_std > 0:
+            y = (y - self._y_mean) / self._y_std
+        else:
+            y = y - self._y_mean
 
         # Pad sequences
         self._sequence_length = max(len(seq) for seq in X)
@@ -307,12 +314,12 @@ class LSTM_ModelFactory(BaseModelFactory):
         X = np.stack([X_events, X_durations], axis=-1)
 
         # Normalize targets
-        y_mean = np.mean(y)
-        y_std = np.std(y)
-        if y_std > 0:
-            y_norm = (y - y_mean) / y_std
+        self._y_mean = float(np.mean(y))
+        self._y_std = float(np.std(y))
+        if self._y_std > 0:
+            y_norm = (y - self._y_mean) / self._y_std
         else:
-            y_norm = y - y_mean
+            y_norm = y - self._y_mean
 
         self._ml_model = self.create_regression_model(
             input_shape=(self._sequence_length, 2)
