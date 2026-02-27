@@ -104,7 +104,7 @@ class LSTM_ModelFactory(BaseModelFactory):
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     
         # Train the model
-        self._ml_model.fit(X_train, y_train, epochs=DEFAULT_EPOCH, batch_size=DEFAULT_BATCH_SIZE, validation_split=0.2)
+        self._training_history = self._ml_model.fit(X_train, y_train, epochs=DEFAULT_EPOCH, batch_size=DEFAULT_BATCH_SIZE, validation_split=0.2)
 
         # Evaluate the model
         return self._ml_model.evaluate(X_test, y_test)
@@ -329,11 +329,11 @@ class LSTM_ModelFactory(BaseModelFactory):
         return loss, val_loss
 
     def train_prediction(self, X, y):
-        history = self._ml_model.fit(
+        self._training_history = self._ml_model.fit(
             X, y,
             epochs=5,
             validation_split=0.2
         )
-        final_loss = history.history['loss'][-1]
-        val_loss = history.history['val_loss'][-1]
+        final_loss = self._training_history.history['loss'][-1]
+        val_loss = self._training_history.history['val_loss'][-1]
         return final_loss, val_loss
