@@ -5,6 +5,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..",
 
 import streamlit as st
 import pandas as pd
+import plotly.express as px
 
 from poc.components.column_detector import detect_columns
 from transformation.transformation_type import TransformationType
@@ -131,8 +132,24 @@ if "transformed_df" in st.session_state:
         all_events.update(df[col].dropna().unique())
     all_events.discard("")
 
+    # Compute sequence lengths: count non-empty event cells per row
+    seq_lengths = df[event_cols].apply(
+        lambda row: row.dropna().replace("", pd.NA).dropna().shape[0], axis=1
+    )
+
     m1.metric("Cases", df.shape[0])
     m2.metric("Unique Events", len(all_events))
     m3.metric("Max Sequence Length", len(event_cols))
 
     st.dataframe(df.head(20), use_container_width=True)
+
+    # Sequence length distribution
+    st.subheader("Sequence Length Distribution")
+    fig_seq = px.histogram(
+        x=seq_lengths,
+        nbins=seq_lengths.nunique(),
+        title="Event Sequence Length per Case",
+        labels={"x": "Sequence Length", "y": "Number of Cases"},
+    )
+    fig_seq.update_layout(bargap=0.1)
+    st.plotly_chart(fig_seq, use_container_width=True)

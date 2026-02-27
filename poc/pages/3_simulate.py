@@ -61,7 +61,7 @@ if has_transition_matrix:
     if selected_node_name:
         selected_idx = event_to_idx[selected_node_name]
 
-        col_a, col_b = st.columns(2)
+        col_a, col_b, col_c = st.columns(3)
         with col_a:
             st.markdown("**Outgoing Transitions**")
             successors = graph.get_successors(selected_idx)
@@ -91,6 +91,24 @@ if has_transition_matrix:
                     st.dataframe(abs_df, use_container_width=True)
                 else:
                     st.write("N/A (absorbing state)")
+            except Exception as e:
+                st.write(f"Could not compute: {e}")
+
+        with col_c:
+            st.markdown("**Reverse Predecessors**")
+            try:
+                ba = ba if "ba" in dir() else BackwardAnalyzer(graph)
+                rev_preds = ba.get_reverse_predecessors(selected_idx)
+                if rev_preds:
+                    rev_df = pd.DataFrame(
+                        {
+                            "Predecessor": [idx_to_event.get(p, str(p)) for p in rev_preds],
+                            "P(pred | event)": list(rev_preds.values()),
+                        }
+                    )
+                    st.dataframe(rev_df, use_container_width=True)
+                else:
+                    st.write("No predecessors (start event)")
             except Exception as e:
                 st.write(f"Could not compute: {e}")
 
@@ -203,3 +221,62 @@ if st.button("Run Simulation", type="primary"):
     for i, traj in enumerate(trajectories[:n_samples]):
         named = [idx_to_event.get(e, str(e)) for e in traj]
         st.code(f"#{i+1}: {' -> '.join(named)}", language=None)
+
+# ============================================================
+# 3c. Prefix Comparison
+# ============================================================
+st.markdown("---")
+st.subheader("Prefix Comparison")
+st.caption("Define multiple prefixes, simulate each, and compare end-event distributions side by side.")
+
+n_compare_prefixes = st.number_input("Number of prefixes to compare", min_value=2, max_value=5, value=2, key="n_cmp")
+compare_n_sims = st.number_input("Simulations per prefix", min_value=10, max_value=10000, value=100, key="cmp_sims")
+
+compare_prefixes = []
+for i in range(int(n_compare_prefixes)):
+    p = st.multiselect(f"Prefix {i+1}", unique_events, key=f"cmp_prefix_{i}")
+    compare_prefixes.append(p)
+
+if st.button("Compare Prefixes", type="primary"):
+    valid_prefixes = [p for p in compare_prefixes if p]
+    if len(valid_prefixes) < 2:
+        st.error("Define at least 2 non-empty prefixes.")
+    else:
+        # Build simulator
+        if model_type == ModelType.LSTM:
+            cmp_sim = LSTMSimulator(model_factory, unique_events_count=len(unique_events), max_steps=100)
+        elif has_transition_matrix:
+            cmp_graph = EventGraph(model_factory.transition_matrix)
+            cmp_sim = ForwardSimulator(cmp_graph, max_steps=100)
+        else:
+            st.error("No simulation backend available.")
+            st.stop()
+
+        rows = []
+        with st.spinner("Running prefix comparison simulations..."):
+            for prefix_names in valid_prefixes:
+                prefix_idx = [event_to_idx[e] for e in prefix_names]
+                results = cmp_sim.simulate_from_prefix(prefix_idx, n_simulations=int(compare_n_sims))
+                stats = cmp_sim.trajectory_statistics(results)
+                label = " -> ".join(prefix_names)
+                for end_evt, proportion in stats.get("end_event_distribution", {}).items():
+                    rows.append({
+                        "Prefix": label,
+                        "End Event": idx_to_event.get(end_evt, str(end_evt)),
+                        "Proportion": proportion,
+                    })
+
+        if rows:
+            cmp_df = pd.DataFrame(rows)
+            fig_cmp = px.bar(
+                cmp_df,
+                x="End Event",
+                y="Proportion",
+                color="Prefix",
+                barmode="group",
+                title="End-Event Distribution: Prefix Comparison",
+            )
+            fig_cmp.update_layout(yaxis_range=[0, 1])
+            st.plotly_chart(fig_cmp, use_container_width=True)
+        else:
+            st.warning("No simulation results to compare.")

@@ -5,6 +5,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..",
 
 import streamlit as st
 import pandas as pd
+import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 
@@ -145,6 +146,97 @@ if model_type == ModelType.LSTM and hasattr(model_factory, "_ml_model") and mode
         fig_hist = px.line(hist_df, title="Training History (per epoch)")
         fig_hist.update_layout(xaxis_title="Epoch", yaxis_title="Value")
         st.plotly_chart(fig_hist, use_container_width=True)
+
+# --- Duration Charts (event_duration / remaining_duration) ---
+if forecasting_type in (ForecastingType.EVENT_DURATION, ForecastingType.REMAINING_DURATION):
+    st.subheader("Duration Predictions vs Actual")
+    with st.spinner("Computing predictions across sample prefixes..."):
+        _event_cols = [c for c in df.columns if c.startswith("__EVENT_")]
+        _dur_cols = [c for c in df.columns if c.startswith("__DURATION_EVENT_")]
+
+        predicted_vals = []
+        actual_vals = []
+        prefix_labels = []
+        n_sample_cases = min(50, len(df))
+        sample_df = df.head(n_sample_cases)
+
+        for _, row in sample_df.iterrows():
+            events = [row[c] for c in _event_cols if pd.notna(row[c]) and row[c] != ""]
+            durations = [row[c] for c in _dur_cols if pd.notna(row[c])]
+            if len(events) < 2:
+                continue
+
+            for plen in range(1, len(events)):
+                prefix = events[:plen]
+                try:
+                    pred = prediction_task.predict(model_factory=model_factory, X=prefix)
+                except Exception:
+                    continue
+
+                if forecasting_type == ForecastingType.REMAINING_DURATION:
+                    if plen < len(durations) and len(durations) > 0:
+                        actual = durations[-1] - durations[plen - 1]
+                    else:
+                        continue
+                else:
+                    if plen < len(durations):
+                        actual = durations[plen] - durations[plen - 1] if plen > 0 else durations[0]
+                    else:
+                        continue
+
+                predicted_vals.append(float(pred))
+                actual_vals.append(float(actual))
+                prefix_labels.append(plen)
+
+        if predicted_vals:
+            chart_df = pd.DataFrame({
+                "Prefix Length": prefix_labels,
+                "Predicted": predicted_vals,
+                "Actual": actual_vals,
+            }).sort_values("Prefix Length")
+
+            # Aggregate by prefix length: mean and std
+            agg = chart_df.groupby("Prefix Length").agg(
+                pred_mean=("Predicted", "mean"),
+                pred_std=("Predicted", "std"),
+                actual_mean=("Actual", "mean"),
+                actual_std=("Actual", "std"),
+            ).fillna(0).reset_index()
+
+            fig_dur = go.Figure()
+            fig_dur.add_trace(go.Scatter(
+                x=agg["Prefix Length"], y=agg["actual_mean"],
+                mode="lines+markers", name="Actual (mean)",
+                line=dict(color="#2ecc71"),
+            ))
+            fig_dur.add_trace(go.Scatter(
+                x=list(agg["Prefix Length"]) + list(agg["Prefix Length"][::-1]),
+                y=list(agg["actual_mean"] + agg["actual_std"]) + list((agg["actual_mean"] - agg["actual_std"])[::-1]),
+                fill="toself", fillcolor="rgba(46,204,113,0.15)",
+                line=dict(color="rgba(0,0,0,0)"), name="Actual +/- 1 std",
+                showlegend=False,
+            ))
+            fig_dur.add_trace(go.Scatter(
+                x=agg["Prefix Length"], y=agg["pred_mean"],
+                mode="lines+markers", name="Predicted (mean)",
+                line=dict(color="#3498db"),
+            ))
+            fig_dur.add_trace(go.Scatter(
+                x=list(agg["Prefix Length"]) + list(agg["Prefix Length"][::-1]),
+                y=list(agg["pred_mean"] + agg["pred_std"]) + list((agg["pred_mean"] - agg["pred_std"])[::-1]),
+                fill="toself", fillcolor="rgba(52,152,219,0.15)",
+                line=dict(color="rgba(0,0,0,0)"), name="Predicted +/- 1 std",
+                showlegend=False,
+            ))
+            title = "Remaining Duration" if forecasting_type == ForecastingType.REMAINING_DURATION else "Event Duration"
+            fig_dur.update_layout(
+                title=f"{title}: Predicted vs Actual by Prefix Length",
+                xaxis_title="Prefix Length",
+                yaxis_title="Duration",
+            )
+            st.plotly_chart(fig_dur, use_container_width=True)
+        else:
+            st.warning("Could not generate duration predictions for charting.")
 
 # --- Prediction Explorer ---
 st.subheader("Prediction Explorer")
